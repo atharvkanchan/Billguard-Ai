@@ -1,14 +1,11 @@
-def calculate_fraud_score(gst_valid,duplicate,price_anomaly):
+def fraud_analysis(gst_valid,duplicate_items):
 
     score = 0
 
     if not gst_valid:
-        score += 0.4
+        score += 0.5
 
-    if duplicate:
-        score += 0.3
-
-    if price_anomaly:
-        score += 0.3
+    if duplicate_items:
+        score += 0.5
 
     return score
