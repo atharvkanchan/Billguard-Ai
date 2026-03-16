@@ -1,29 +1,52 @@
 import streamlit as st
-import re
+
 from ocr_utils import extract_text
+from bill_parser import parse_bill
 from gst_validator import validate_gstin
-from fraud_detector import calculate_fraud_score
+from fraud_detector import fraud_analysis
 
 st.title("🧾 BillGuard AI")
 
-uploaded_file = st.file_uploader("Upload Bill", type=["png","jpg","jpeg"])
+uploaded_file = st.file_uploader(
+    "Upload Bill",
+    type=["png","jpg","jpeg"]
+)
 
 if uploaded_file:
 
+    st.image(uploaded_file)
+
     text = extract_text(uploaded_file)
 
-    st.subheader("Extracted Text")
-    st.write(text)
+    st.subheader("Extracted Bill Text")
+    st.text(text)
 
-    gst_pattern = r'[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][A-Z0-9]Z[A-Z0-9]'
-    gst_found = re.findall(gst_pattern,text)
+    data = parse_bill(text)
 
-    gst_valid = False
+    st.subheader("Bill Information")
 
-    if gst_found:
-        gst_valid = validate_gstin(gst_found[0])
-        st.write("GST Found:",gst_found[0])
+    st.write("Invoice Number:",data["invoice"])
+    st.write("Date:",data["date"])
+    st.write("GST:",data["gst"])
 
-    fraud = calculate_fraud_score(gst_valid,False,False)
+    gst_valid = validate_gstin(data["gst"])
 
-    st.write("Fraud Score:",fraud)
+    if gst_valid:
+        st.success("GST Valid")
+
+    else:
+        st.error("GST Invalid")
+
+    fraud_score = fraud_analysis(gst_valid,False)
+
+    st.subheader("Fraud Risk Score")
+
+    st.write(fraud_score)
+
+    if fraud_score > 0.5:
+
+        st.error("⚠ Possible Fraud")
+
+    else:
+
+        st.success("Bill looks normal")
